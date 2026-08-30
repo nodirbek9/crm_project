@@ -1,0 +1,35 @@
+# [DEMO] docker-compose for local/demo use only. Credentials below are demonstration values,
+# not production secrets - see docs-2/ASSUMPTIONS.md.
+services:
+  postgres:
+    image: postgres:16
+    container_name: crm-backend-postgres
+    environment:
+      POSTGRES_DB: crm
+      POSTGRES_USER: crm
+      POSTGRES_PASSWORD: crm
+    ports:
+      - "5432:5432"
+    volumes:
+      - crm-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crm -d crm"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: crm-backend-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: demo
+    ports:
+      - "8080:8080"
+
+volumes:
+  crm-postgres-data:

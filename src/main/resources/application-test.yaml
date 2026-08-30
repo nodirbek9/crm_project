@@ -1,0 +1,16 @@
+# Profile activated by AbstractIntegrationTest. Datasource coordinates are injected at runtime
+# via @DynamicPropertySource against a Testcontainers PostgreSQL 16 instance (TEST_MATRIX.md) -
+# nothing datasource-related is hardcoded here on purpose.
+spring:
+  flyway:
+    enabled: true
+    # [DEMO] seed data (workflow v1/v2 etc., docs-2/ASSUMPTIONS.md A21) - test only, never prod.
+    locations: classpath:db/migration,classpath:db/demo
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+logging:
+  level:
+    uz.ithunter.crm: DEBUG
+    org.testcontainers: INFO

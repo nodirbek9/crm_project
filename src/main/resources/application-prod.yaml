@@ -1,0 +1,19 @@
+# Production profile. No credentials or hosts are hardcoded; everything comes from the
+# environment. This is scaffolding for later phases (JWT secret, storage port config, etc. are
+# not wired yet in Phase 1) - only the datasource and Swagger hardening apply so far.
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+logging:
+  level:
+    uz.ithunter.crm: INFO
+    root: WARN

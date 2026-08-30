@@ -1,0 +1,43 @@
+# Common configuration shared by every profile.
+# Profile-specific overrides live in application-{local,demo,test,prod}.yaml.
+spring:
+  application:
+    name: crm-backend
+  profiles:
+    default: local
+  jpa:
+    hibernate:
+      ddl-auto: validate   # Flyway owns the schema; entities must match it (CLAUDE.md).
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+
+# SECURITY_SPEC.md 1: HS256, [DEMO] secret from env. See ASSUMPTIONS.md for the demo-default note.
+jwt:
+  secret: ${JWT_SECRET:demo-only-secret-key-for-crm-backend-do-not-use-in-production-32bytes+}
+  access-token-ttl-minutes: 15
+  refresh-token-ttl-days: 7
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+server:
+  port: 8080

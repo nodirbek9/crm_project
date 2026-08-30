@@ -1,0 +1,15 @@
+# Profile used by the backend container in docker-compose.yml, connecting to the sibling
+# `postgres` service by its Docker network hostname. Intended for the walkable demo scenario
+# scripted in docs-2/FINAL_IMPLEMENTATION_ORDER.md - db/demo/V900 started as a workflow-only seed
+# in Phase 6 (docs-2/ASSUMPTIONS.md A21) and grows through Phase 13.
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/crm
+    username: crm
+    password: crm   # [DEMO] docker-compose-only credential, see docs-2/ASSUMPTIONS.md
+  flyway:
+    locations: classpath:db/migration,classpath:db/demo
+
+logging:
+  level:
+    uz.ithunter.crm: INFO
