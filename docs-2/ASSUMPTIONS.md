@@ -473,3 +473,38 @@ from what `SecurityGrantMatrixTest` asserts - the demo script's step 0 is the on
 deployment needs anyway: an admin uses `PATCH /api/admin/roles/DEPARTMENT_HEAD/permissions` once,
 after first boot. `DemoScenarioWalkthroughTest` performs and then reverts this same call so the
 shared test container's grant matrix is unaffected for every other test class. [DEMO]
+
+## A51. Spring Boot 4.1 is used where earlier docs say "Spring Boot 3.x" (external review finding)
+`docs-2/MASTER_PROMPT_V2.md` (written before implementation started) specifies "Spring Boot 3.x".
+By the time Phase 1 was implemented, Spring Boot 4.1 was the current GA release and was used
+instead - a newer minor/major within the same intended stack, not a deviation in kind. `docs-2/`
+is a read-only design record (CLAUDE.md) so this note lives here rather than editing that file.
+[DEMO]
+
+## A52. `crm_app` (V10's "layer 2" DB role) is provisioned but never connected to; set NOLOGIN in
+V13 (external review finding)
+Every profile's datasource (`application-local/demo/test.yaml`) connects as the schema owner
+(`crm`/`crm_test`), never as `crm_app` - the INSERT+SELECT-only grant V10 gives it was never the
+thing actually enforcing audit immutability; `tr_audit_log_immutable`/`tr_audit_log_no_truncate`
+are, and they apply even to the owner (SchemaIntegrityTest's `auditLogRejectsUpdate` etc. prove
+this directly). A `LOGIN` role with full DML and no password is a real attack surface regardless
+of whether the application currently uses it - `V13__crm_app_nologin.sql` sets it `NOLOGIN`, which
+closes that surface unconditionally (a role that cannot authenticate cannot be an open door,
+independent of `pg_hba.conf`). The grants themselves are untouched and still documented as
+defense-in-depth for a future dedicated audit-writer datasource; `SchemaIntegrityTest`'s assertion
+on the grant set is unaffected by `LOGIN`/`NOLOGIN` and keeps validating that configuration is
+correct whenever it is wired up. [DEMO]
+
+## A53. `DemoBootstrapRunner` grants DEPARTMENT_HEAD its registration permission automatically
+under the `demo` profile only (external review finding, refines A50)
+A50 established the admin-API bootstrap call as the intended way to close the gap A30 documents.
+External review flagged that requiring a manual API call before the seeded system can perform its
+own first business operation is a bad first impression for `docker compose up`. `DemoBootstrapRunner`
+(a `@Profile("demo")` `CommandLineRunner`) now makes that same API call automatically on
+container startup, idempotently, through `AdminRolePermissionService` - not by seeding the grant
+directly in `db/demo/V900`, because V900 loads under the `test` profile too (the same shared
+Testcontainers database `SecurityGrantMatrixTest` reads), and that test must keep asserting an
+exact, unmodified transcription of `SECURITY_SPEC.md` 3. `DemoScenarioWalkthroughTest` runs under
+`test`, not `demo`, so it still performs (and reverts) the manual PATCH itself - which is
+intentional: it is still the one automated proof that the admin endpoint itself works correctly,
+not just that the demo container happens to be pre-configured. [DEMO]

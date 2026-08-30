@@ -1,0 +1,15 @@
+-- V13: close a real attack-surface gap in V10's crm_app role - external review finding.
+--
+-- V10 created crm_app as CREATE ROLE crm_app LOGIN with no password. Nothing in the application
+-- actually connects as crm_app (every profile's datasource uses the schema owner - crm/crm_test),
+-- so the role's grants (INSERT+SELECT only on audit_log) were never the thing actually enforcing
+-- anything; tr_audit_log_immutable/tr_audit_log_no_truncate are, and they apply even to the owner.
+-- A passwordless LOGIN role with DML on every table is a real door under any pg_hba.conf that
+-- permits trust or password-less auth for it, whether or not the app currently walks through it.
+--
+-- Fix: NOLOGIN. A role that cannot authenticate at all cannot be an open door, independent of
+-- pg_hba.conf. The grants stay exactly as V10 defined them - this role is provisioned as
+-- documented defense-in-depth for a future wiring (a dedicated audit-writer datasource), not
+-- something currently connected to; SchemaIntegrityTest's assertion on its grant set is unaffected
+-- by LOGIN/NOLOGIN and keeps validating that configuration is correct whenever it IS wired up.
+ALTER ROLE crm_app NOLOGIN;

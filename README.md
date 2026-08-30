@@ -117,18 +117,20 @@ Starts PostgreSQL 16 and the backend (Flyway runs `db/migration` + `db/demo` aut
 manual DB work). Health: `GET http://localhost:8080/actuator/health`. API explorer:
 `http://localhost:8080/swagger-ui.html`.
 
-**Step 0 — one-time bootstrap (every fresh database):** log in as `admin@example.com`
-(password below), then:
+**Nothing manual needed under `docker compose up`** — `DemoBootstrapRunner` grants
+`DEPARTMENT_HEAD` the `APPLICATION:EDIT`/`CASE:EDIT` it needs to register a case automatically on
+startup, idempotently, through the same admin API a real deployment would call by hand (see
+[§6](#6-security) for why the seeded matrix does not grant this itself). If you are running
+against a different profile that doesn't include this runner, the one-time equivalent is:
 
 ```
-GET  /api/admin/roles/DEPARTMENT_HEAD/permissions
+GET   /api/admin/roles/DEPARTMENT_HEAD/permissions
 PATCH /api/admin/roles/DEPARTMENT_HEAD/permissions
-     { "permissionCodes": [...current list..., "APPLICATION:EDIT", "CASE:EDIT"] }
+      { "permissionCodes": [...current list..., "APPLICATION:EDIT", "CASE:EDIT"] }
 ```
 
-This is the one API call every fresh deployment needs before the first case can be registered —
-see [§6](#6-security) for why. `DemoScenarioWalkthroughTest` in the test suite performs exactly
-this call (and reverts it) as part of an automated, repeatable proof the whole scenario works.
+`DemoScenarioWalkthroughTest` in the test suite performs exactly this call (and reverts it) as
+part of an automated, repeatable proof the admin endpoint itself works, independent of the runner.
 
 ## 9. Test users
 

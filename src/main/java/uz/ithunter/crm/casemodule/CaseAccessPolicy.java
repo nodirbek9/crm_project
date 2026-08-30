@@ -7,9 +7,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import uz.ithunter.crm.auth.CustomUserPrincipal;
+import uz.ithunter.crm.casemodule.port.CaseTaskAssignmentLookup;
 import uz.ithunter.crm.shared.exception.AccessDeniedDomainException;
 import uz.ithunter.crm.shared.exception.NotFoundException;
-import uz.ithunter.crm.task.TaskRepository;
 import uz.ithunter.crm.user.RoleCode;
 import uz.ithunter.crm.user.User;
 import uz.ithunter.crm.user.UserRepository;
@@ -30,7 +30,7 @@ import uz.ithunter.crm.user.UserRepository;
 public class CaseAccessPolicy {
 
     private final UserRepository userRepository;
-    private final ObjectProvider<TaskRepository> taskRepository;
+    private final ObjectProvider<CaseTaskAssignmentLookup> taskAssignmentLookup;
 
     /** SECURITY_SPEC.md 5's {@code canViewCase}, transcribed role by role. */
     public boolean canViewCase(CustomUserPrincipal principal, ElectronicCase electronicCase) {
@@ -164,7 +164,8 @@ public class CaseAccessPolicy {
             // HEAD_OF_CERTIFICATION_BODY oversees every case (spec 3.2), OPERATOR monitors (spec 17.1).
             case ACCOUNTANT, HEAD_OF_CERTIFICATION_BODY, OPERATOR -> true;
             case DEPARTMENT_HEAD -> departmentTouchesCase(principal.departmentId(), electronicCase)
-                    || taskRepository.getObject().existsByCaseIdAndAssignedDepartmentId(electronicCase.getId(), principal.departmentId());
+                    || taskAssignmentLookup.getObject()
+                            .existsAssignedToDepartment(electronicCase.getId(), principal.departmentId());
             // SECURITY_SPEC.md 5's pseudocode for SPECIALIST is task-existence only, with no
             // department-touch fallback at all - taken completely literally, that breaks the
             // primary-check step itself (spec 3.4, 4.5: PRIMARY_CHECK is a SPECIALIST action), since
@@ -176,8 +177,9 @@ public class CaseAccessPolicy {
             // Phase 7 flow (confirmed by running CaseLifecycleIntegrationTest, which the tightening
             // itself was never verified against before this fix).
             case SPECIALIST -> departmentTouchesCase(principal.departmentId(), electronicCase)
-                    || taskRepository.getObject().existsByCaseIdAndAssignedUserId(electronicCase.getId(), principal.userId())
-                    || taskRepository.getObject().existsByCaseIdAndAssignedDepartmentId(electronicCase.getId(), principal.departmentId());
+                    || taskAssignmentLookup.getObject().existsAssignedToUser(electronicCase.getId(), principal.userId())
+                    || taskAssignmentLookup.getObject()
+                            .existsAssignedToDepartment(electronicCase.getId(), principal.departmentId());
             case ADMIN -> false;
         };
     }
