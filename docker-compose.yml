@@ -9,7 +9,11 @@ services:
       POSTGRES_USER: crm
       POSTGRES_PASSWORD: crm
     ports:
-      - "5432:5432"
+      # Host-side 5433, not 5432: the backend/frontend containers talk to postgres over the
+      # internal compose network regardless (hostname "postgres", port 5432 there), so this
+      # mapping only matters if you want to psql in from the host - and 5432 is commonly already
+      # taken by a native Postgres install.
+      - "5433:5432"
     volumes:
       - crm-postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -30,6 +34,17 @@ services:
       SPRING_PROFILES_ACTIVE: demo
     ports:
       - "8080:8080"
+
+  frontend:
+    build:
+      context: ../front-end
+    container_name: crm-frontend
+    environment:
+      BACKEND_URL: http://backend:8080
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
 
 volumes:
   crm-postgres-data:

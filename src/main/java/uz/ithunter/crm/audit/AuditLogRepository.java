@@ -24,15 +24,26 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
 
     Page<AuditLog> findByCaseIdOrderBySeqDesc(UUID caseId, Pageable pageable);
 
-    /** Dynamic multi-filter query for GET /audit — all params nullable. */
+    /**
+     * Dynamic multi-filter query for GET /audit — all params nullable.
+     *
+     * <p>{@code from}/{@code to} use {@code coalesce(:param, a.createdAt)} rather than the
+     * {@code (:param is null or ...)} pattern used for the other filters: an {@code Instant}
+     * parameter that appears ONLY inside an {@code is null} check gives Postgres no type context to
+     * infer it from, and it fails the whole statement with "could not determine data type of
+     * parameter $N" (UUID/enum/string params don't hit this - only java.time temporal ones do). The
+     * coalesce form is safe here specifically because {@code created_at} is {@code NOT NULL}
+     * (unlike {@code case_id}/{@code user_id}, which keep the {@code is null or} form since a
+     * coalesce-against-self would wrongly drop administrative rows where the column itself is null).
+     */
     @Query("""
             select a from AuditLog a
             where (:caseId is null or a.caseId = :caseId)
               and (:userId is null or a.userId = :userId)
               and (:action is null or a.action = :action)
               and (:entityType is null or a.entityType = :entityType)
-              and (:from is null or a.createdAt >= :from)
-              and (:to is null or a.createdAt <= :to)
+              and a.createdAt >= coalesce(:from, a.createdAt)
+              and a.createdAt <= coalesce(:to, a.createdAt)
             order by a.seq desc
             """)
     Page<AuditLog> search(
