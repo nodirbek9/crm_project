@@ -20,7 +20,7 @@ spring:
 
 # SECURITY_SPEC.md 1: HS256, [DEMO] secret from env. See ASSUMPTIONS.md for the demo-default note.
 jwt:
-  secret: ${JWT_SECRET:demo-only-secret-key-for-crm-backend-do-not-use-in-production-32bytes+}
+  secret: ${JWT_SECRET:3cfa76ef14937c1c0ea519f8fc057a80fcd04a7420f8e8bcd0a7567c272e007b}
   access-token-ttl-minutes: 15
   refresh-token-ttl-days: 7
 
