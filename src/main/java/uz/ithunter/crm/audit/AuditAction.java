@@ -13,7 +13,6 @@ import java.util.Set;
  */
 public enum AuditAction {
 
-    // --- case lifecycle (spec 1.19, 4.x, 5.x) ---
     CASE_CREATED,
     CASE_REGISTERED,
     PRIMARY_CHECK_COMPLETED,
